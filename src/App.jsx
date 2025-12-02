@@ -4,7 +4,16 @@ import { languages } from "./languages";
 export default function AssemblyEndgame() {
   const [currentWord, setCurrentWord] = useState("react");
 
+  const [guessedLetters, setGuessedLetters] = useState([]);
+  console.log(guessedLetters);
+
   const alphabet = "abcdefghijklmnopqrstuvwxyz";
+
+  function addGuessedLetter(letter) {
+    setGuessedLetters((prevLetters) =>
+      prevLetters.includes(letter) ? prevLetters : [...prevLetters, letter],
+    );
+  }
 
   const languageElements = languages.map((lang) => {
     const styles = {
@@ -22,9 +31,11 @@ export default function AssemblyEndgame() {
     .split("")
     .map((letter, index) => <span key={index}>{letter.toUpperCase()}</span>);
 
-  const keyboardElements = alphabet
-    .split("")
-    .map((letter) => <button key={letter}>{letter.toUpperCase()}</button>);
+  const keyboardElements = alphabet.split("").map((letter) => (
+    <button onClick={() => addGuessedLetter(letter)} key={letter}>
+      {letter.toUpperCase()}
+    </button>
+  ));
 
   return (
     <main>
