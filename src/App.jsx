@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { languages } from "./languages";
 import clsx from "clsx";
+import { getFarewellText, getRandomWord } from "./utils";
+import Confetti from "react-confetti";
 
 export default function AssemblyEndgame() {
   //state values
-  const [currentWord, setCurrentWord] = useState("react");
+  const [currentWord, setCurrentWord] = useState(() => getRandomWord());
   const [guessedLetters, setGuessedLetters] = useState([]);
 
   //derived values
@@ -18,6 +20,10 @@ export default function AssemblyEndgame() {
   const isGameLost = wrongGuessCount >= languages.length - 1;
   const isGameOver = isGameWon || isGameLost;
 
+  const lastGuessedLetter = guessedLetters[guessedLetters.length - 1];
+  const isLastGuessIncorrect =
+    lastGuessedLetter && !currentWord.includes(lastGuessedLetter);
+
   //static values
   const alphabet = "abcdefghijklmnopqrstuvwxyz";
 
@@ -25,6 +31,11 @@ export default function AssemblyEndgame() {
     setGuessedLetters((prevLetters) =>
       prevLetters.includes(letter) ? prevLetters : [...prevLetters, letter],
     );
+  }
+
+  function startNewGame() {
+    setCurrentWord(getRandomWord());
+    setGuessedLetters([]);
   }
 
   const languageElements = languages.map((lang, index) => {
@@ -41,13 +52,12 @@ export default function AssemblyEndgame() {
     );
   });
 
-  const letterElements = currentWord
-    .split("")
-    .map((letter, index) => (
-      <span key={index}>
-        {guessedLetters.includes(letter) ? letter.toUpperCase() : ""}
-      </span>
-    ));
+  const letterElements = currentWord.split("").map((letter, index) => {
+    const shouldRevealLetter = isGameLost || guessedLetters.includes(letter);
+    return (
+      <span key={index}>{shouldRevealLetter ? letter.toUpperCase() : ""}</span>
+    );
+  });
 
   const keyboardElements = alphabet.split("").map((letter) => {
     const isGuessed = guessedLetters.includes(letter);
@@ -63,6 +73,7 @@ export default function AssemblyEndgame() {
         className={className}
         onClick={() => addGuessedLetter(letter)}
         key={letter}
+        disabled={isGameOver}
       >
         {letter.toUpperCase()}
       </button>
@@ -71,11 +82,16 @@ export default function AssemblyEndgame() {
   const gameStatusClass = clsx("game-status", {
     won: isGameWon,
     lost: isGameLost,
+    farewell: !isGameOver && isLastGuessIncorrect,
   });
 
   function renderGameStatus() {
-    if (!isGameOver) {
-      return null;
+    if (!isGameOver && isLastGuessIncorrect) {
+      return (
+        <p className="farewell-message">
+          {getFarewellText(languages[wrongGuessCount - 1].name)}
+        </p>
+      );
     }
 
     if (isGameWon) {
@@ -85,7 +101,8 @@ export default function AssemblyEndgame() {
           <p>Well done! 🎉</p>
         </>
       );
-    } else {
+    }
+    if (isGameLost) {
       return (
         <>
           <h2>Game over!</h2>
@@ -93,10 +110,12 @@ export default function AssemblyEndgame() {
         </>
       );
     }
+    return null;
   }
 
   return (
     <main>
+      {isGameWon && <Confetti recycle={false} numberOfPieces={1000} />}
       <header>
         <h1>Assembly: Endgame</h1>
         <p>
@@ -108,7 +127,11 @@ export default function AssemblyEndgame() {
       <section className="language-chips">{languageElements}</section>
       <section className="word">{letterElements}</section>
       <section className="keyboard">{keyboardElements}</section>
-      {isGameOver && <button className="new-game">New Game</button>}
+      {isGameOver && (
+        <button className="new-game" onClick={startNewGame}>
+          New Game
+        </button>
+      )}
     </main>
   );
 }
